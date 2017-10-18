@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#FF4081</color>
+    <color name="gradientStart">#E42728</color>
+    <color name="gradientEnd">#C00005</color>
+    <color name="progressOuterLine">#d4d4d4</color>
+    <color name="progressGradientStart">#F76B1C</color>
+    <color name="progressGradientEnd">#FAD961</color>
+    <color name="seatSelected">#F1A81D</color>
+    <color name="seatAvailableStroke">#C1C1C1</color>
+    <color name="seatAvailableFill">#FFFFFF</color>
+    <color name="seatTaken">#555555</color>
+</resources>
