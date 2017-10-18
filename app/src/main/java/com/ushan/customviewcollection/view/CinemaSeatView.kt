@@ -26,6 +26,7 @@ class CinemaSeatView : View {
     private val mAvailableSeatFillPaint = Paint()
     private val mTakenSeatPaint = Paint()
     private val mSelectedSeatPaint = Paint()
+    private val mSeatNumberPaint = Paint()
 
     private var mSeatSpacing = 16f
     private var mSeatColumnCount = 0
@@ -92,6 +93,12 @@ class CinemaSeatView : View {
             style = Paint.Style.FILL
             color = ContextCompat.getColor(context, R.color.seatSelected)
         }
+
+        mSeatNumberPaint.apply {
+            style = Paint.Style.FILL
+            textSize = 20f
+            color = ContextCompat.getColor(context, R.color.seatAvailableStroke)
+        }
     }
 
     override fun onDraw(canvas: Canvas?) {
@@ -147,9 +154,14 @@ class CinemaSeatView : View {
                 else -> {
                     val whiteRect = RectF(leading + 1.5f, bottomRectTop - 1.5f,
                             right - 1.5f, bottom - 1.5f)
+                    val columnText = (it.column + 1).toString()
+                    val textFactor = if (columnText.length == 2) 0.1f else 0.3f
+                    val textX = whiteRect.left + (mSeatWidth * textFactor)
+                    val textY = whiteRect.top + (mSeatWidth * 0.3f)
                     canvas.drawRoundRect(outerRect, radius, radius, mAvailableSeatBorderPaint)
                     canvas.drawRect(innerRect, mAvailableSeatBorderPaint)
                     canvas.drawRect(whiteRect, mAvailableSeatFillPaint)
+                    canvas.drawText(columnText, textX, textY, mSeatNumberPaint)
                 }
             }
         }
