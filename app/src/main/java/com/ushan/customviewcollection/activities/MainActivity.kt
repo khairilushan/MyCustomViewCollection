@@ -14,7 +14,7 @@ class MainActivity: AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_select_seat)
-        cinemaSeatView.setSeats(createDummySeat())
+        cinemaSeatLayout.setSeats(createDummySeat())
     }
 
     private fun createDummySeat() : List<Seat> {

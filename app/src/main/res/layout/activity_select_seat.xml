@@ -4,8 +4,8 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <com.ushan.customviewcollection.view.CinemaSeatView
-        android:id="@+id/cinemaSeatView"
+    <com.ushan.customviewcollection.view.CinemaSeatLayout
+        android:id="@+id/cinemaSeatLayout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="wrap_content" />
 </LinearLayout>

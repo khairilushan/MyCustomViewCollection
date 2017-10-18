@@ -43,10 +43,11 @@ class CinemaSeatView : View {
     private var mScrollAnimator = ValueAnimator.ofFloat(0f, 0f)
     private var mScroller = Scroller(context)
     private var mSeats = listOf<Seat>()
+    private var mListener: SeatViewListener? = null
 
     companion object {
         private const val MIN_ZOOM = 1f
-        private const val MAX_ZOOM = 3f
+        private const val MAX_ZOOM = 4f
     }
 
     constructor(context: Context) : this(context, null, 0)
@@ -57,8 +58,6 @@ class CinemaSeatView : View {
             super(context, attrs, defStyleAttr) {
 
         val white = ContextCompat.getColor(context, android.R.color.white)
-
-        setBackgroundColor(white)
 
         mScaleDetector = ScaleGestureDetector(context, mScaleGestureListener)
         mGestureDetector = GestureDetectorCompat(context, mGestureListener)
@@ -96,7 +95,7 @@ class CinemaSeatView : View {
 
         mSeatNumberPaint.apply {
             style = Paint.Style.FILL
-            textSize = 20f
+            textSize = 15f
             color = ContextCompat.getColor(context, R.color.seatAvailableStroke)
         }
     }
@@ -165,36 +164,6 @@ class CinemaSeatView : View {
                 }
             }
         }
-//        for (row in 0..mSeatRowCount) {
-//            var left = 0f
-//            for (column in 0..mSeatColumnCount) {
-//
-//                if (column == 0) {
-//                    left = mSeatSpacing
-//                } else {
-//                    left += (mSeatWidth + mSeatSpacing)
-//                }
-//
-//                val right = left + mSeatWidth
-//                val bottom = top + mSeatWidth
-//                val radius = mSeatWidth * 0.35f
-//                val bottomRectTop = top + (mSeatWidth * 0.5f)
-//                val outerRect = RectF(left, top, right, bottom)
-//                val innerRect = RectF(left, bottomRectTop, right, bottom)
-//
-//                if (isSeatSelected(row, column)) {
-//                    canvas.drawRoundRect(outerRect, radius, radius, mSelectedSeatPaint)
-//                    canvas.drawRect(innerRect, mSelectedSeatPaint)
-//                } else {
-//                    val whiteRect = RectF(left + 1.5f, bottomRectTop - 1.5f,
-//                            right - 1.5f, bottom - 1.5f)
-//                    canvas.drawRoundRect(outerRect, radius, radius, mAvailableSeatBorderPaint)
-//                    canvas.drawRect(innerRect, mAvailableSeatBorderPaint)
-//                    canvas.drawRect(whiteRect, mAvailableSeatFillPaint)
-//                }
-//            }
-//            top += (mSeatWidth + mSeatSpacing)
-//        }
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -203,6 +172,7 @@ class CinemaSeatView : View {
         val columnCount = mSeatColumnCount.toFloat()
         val totalSpacing = mSeatSpacing * (columnCount + 1)
         mSeatWidth = (w - totalSpacing) / columnCount
+        mListener?.onSeatWidthChanged(mSeatWidth)
         ViewCompat.postInvalidateOnAnimation(this@CinemaSeatView)
     }
 
@@ -230,6 +200,7 @@ class CinemaSeatView : View {
                 mOriginalRect.right * mScale,
                 mOriginalRect.bottom * mScale
         )
+        mListener?.onSeatWidthChanged(mSeatWidth * mScale)
         log("mScale = $mScale")
     }
 
@@ -239,6 +210,13 @@ class CinemaSeatView : View {
         override fun onScale(scaleGestureDetector: ScaleGestureDetector): Boolean {
             mPivot.set(scaleGestureDetector.focusX, scaleGestureDetector.focusY)
             updateScale(scaleGestureDetector.scaleFactor)
+            val scaledCurrentBounds = RectF(
+                    mCurrentClipBounds.left * mScale,
+                    mCurrentClipBounds.top * mScale,
+                    mCurrentClipBounds.right * mScale,
+                    mCurrentClipBounds.bottom * mScale
+            )
+            mListener?.onScrolled(scaledCurrentBounds.left, scaledCurrentBounds.top)
             ViewCompat.postInvalidateOnAnimation(this@CinemaSeatView)
             return true
         }
@@ -282,6 +260,14 @@ class CinemaSeatView : View {
                 else -> newY
             }
 
+            val scaledCurrentBounds = RectF(
+                    mCurrentClipBounds.left * mScale,
+                    mCurrentClipBounds.top * mScale,
+                    mCurrentClipBounds.right * mScale,
+                    mCurrentClipBounds.bottom * mScale
+            )
+            mListener?.onScrolled(scaledCurrentBounds.left, scaledCurrentBounds.top)
+
             mPivot.set(newX, newY)
             ViewCompat.postInvalidateOnAnimation(this@CinemaSeatView)
             return true
@@ -320,6 +306,9 @@ class CinemaSeatView : View {
                     "row = $row\n" +
                     "column = $column\n"
             )
+
+            mListener?.onScrolled(scaledCurrentBounds.left, scaledCurrentBounds.top)
+
             return true
         }
     }
@@ -352,6 +341,18 @@ class CinemaSeatView : View {
         mSeatColumnCount = maxColumnCount
         mSeats = seats
         ViewCompat.postInvalidateOnAnimation(this@CinemaSeatView)
+    }
+
+    fun addSeatViewListener(listener: SeatViewListener) {
+        mListener = listener
+    }
+
+    interface SeatViewListener {
+
+        fun onSeatWidthChanged(width: Float)
+
+        fun onScrolled(x: Float, y: Float)
+
     }
 
 }
