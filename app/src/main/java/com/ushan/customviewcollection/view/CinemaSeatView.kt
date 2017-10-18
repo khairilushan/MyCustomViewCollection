@@ -28,8 +28,8 @@ class CinemaSeatView : View {
     private val mSelectedSeatPaint = Paint()
 
     private var mSeatSpacing = 16f
-    private var mSeatColumnCount = 20
-    private var mSeatRowCount = 20
+    private var mSeatColumnCount = 0
+    private var mSeatRowCount = 0
     private var mSeatWidth = 0f
     private var mScale = 1f
     private var mPivot = PointF(0f, 0f)
@@ -135,18 +135,22 @@ class CinemaSeatView : View {
             val outerRect = RectF(leading, top, right, bottom)
             val innerRect = RectF(leading, bottomRectTop, right, bottom)
 
-            if (it.state == Seat.SEAT_STATE_SELECTED) {
-                canvas.drawRoundRect(outerRect, radius, radius, mSelectedSeatPaint)
-                canvas.drawRect(innerRect, mSelectedSeatPaint)
-            } else if (it.state == Seat.SEAT_STATE_UNAVAILABLE) {
-                canvas.drawRoundRect(outerRect, radius, radius, mTakenSeatPaint)
-                canvas.drawRect(innerRect, mTakenSeatPaint)
-            } else {
-                val whiteRect = RectF(leading + 1.5f, bottomRectTop - 1.5f,
-                        right - 1.5f, bottom - 1.5f)
-                canvas.drawRoundRect(outerRect, radius, radius, mAvailableSeatBorderPaint)
-                canvas.drawRect(innerRect, mAvailableSeatBorderPaint)
-                canvas.drawRect(whiteRect, mAvailableSeatFillPaint)
+            when {
+                it.state == Seat.SEAT_STATE_SELECTED -> {
+                    canvas.drawRoundRect(outerRect, radius, radius, mSelectedSeatPaint)
+                    canvas.drawRect(innerRect, mSelectedSeatPaint)
+                }
+                it.state == Seat.SEAT_STATE_UNAVAILABLE -> {
+                    canvas.drawRoundRect(outerRect, radius, radius, mTakenSeatPaint)
+                    canvas.drawRect(innerRect, mTakenSeatPaint)
+                }
+                else -> {
+                    val whiteRect = RectF(leading + 1.5f, bottomRectTop - 1.5f,
+                            right - 1.5f, bottom - 1.5f)
+                    canvas.drawRoundRect(outerRect, radius, radius, mAvailableSeatBorderPaint)
+                    canvas.drawRect(innerRect, mAvailableSeatBorderPaint)
+                    canvas.drawRect(whiteRect, mAvailableSeatFillPaint)
+                }
             }
         }
 //        for (row in 0..mSeatRowCount) {
@@ -313,6 +317,27 @@ class CinemaSeatView : View {
     }
 
     fun setSeats(seats: List<Seat>) {
+        var maxRowCount = 0
+        var maxColumnCount = 0
+        var rowColumnCount = 0
+        var currentRow = 0
+        var currentColumn = 0
+        seats.forEach {
+            if (currentRow != it.row) {
+                currentRow = it.row
+                maxRowCount += 1
+                rowColumnCount = 0
+            }
+            if (currentColumn != it.column) {
+                currentColumn = it.column
+                rowColumnCount += 1
+            }
+            if (rowColumnCount > maxColumnCount) {
+                maxColumnCount = rowColumnCount
+            }
+        }
+        mSeatRowCount = maxRowCount
+        mSeatColumnCount = maxColumnCount
         mSeats = seats
         ViewCompat.postInvalidateOnAnimation(this@CinemaSeatView)
     }
