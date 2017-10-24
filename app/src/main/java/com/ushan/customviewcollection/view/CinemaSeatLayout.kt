@@ -16,6 +16,7 @@ class CinemaSeatLayout : ConstraintLayout, CinemaSeatView.Listener, CinemaGuideV
     private var mSeatGuideRightView: CinemaGuideView
     private var mScreenView: CinemaScreenView
     private var mAdapter: Adapter? = null
+    private var mSelectedListener: OnSeatSelectedListener? = null
 
     constructor(context: Context) : this(context, null, 0)
 
@@ -34,6 +35,10 @@ class CinemaSeatLayout : ConstraintLayout, CinemaSeatView.Listener, CinemaGuideV
         mSeatView.addSeatViewListener(this)
         mSeatGuideLeftView.addGuideViewListener(this)
         mSeatGuideRightView.addGuideViewListener(this)
+    }
+
+    fun setOnSeatSelectedListener(listener: OnSeatSelectedListener) {
+        mSelectedListener = listener
     }
 
     fun setAdapter(adapter: Adapter) {
@@ -64,6 +69,14 @@ class CinemaSeatLayout : ConstraintLayout, CinemaSeatView.Listener, CinemaGuideV
     }
 
     override fun guideTextFor(row: Int) = mAdapter?.cinemaGuideText(row) ?: ""
+
+    override fun onSeatSelected(row: Int, column: Int, data: Any) {
+        mSelectedListener?.onSelected(row, column, data)
+    }
+
+    override fun onSeatUnSelected(row: Int, column: Int, data: Any) {
+        mSelectedListener?.onUnSelected(row, column, data)
+    }
 
     abstract class Adapter {
 
@@ -100,6 +113,14 @@ class CinemaSeatLayout : ConstraintLayout, CinemaSeatView.Listener, CinemaGuideV
             const val SEAT_STATE_UNAVAILABLE = 1
             const val SEAT_STATE_SELECTED = 2
         }
+
+    }
+
+    interface OnSeatSelectedListener {
+
+        fun onSelected(row: Int, column: Int, data: Any)
+
+        fun onUnSelected(row: Int, column: Int, data: Any)
 
     }
 

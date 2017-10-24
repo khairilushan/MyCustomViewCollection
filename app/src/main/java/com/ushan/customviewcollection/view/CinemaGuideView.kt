@@ -3,10 +3,10 @@ package com.ushan.customviewcollection.view
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.Typeface
 import android.support.v4.content.ContextCompat
 import android.support.v4.view.ViewCompat
 import android.util.AttributeSet
-import android.util.Log
 import android.view.View
 import com.ushan.customviewcollection.R
 
@@ -33,6 +33,7 @@ class CinemaGuideView : View {
             style = Paint.Style.FILL
             textSize = 20f
             color = ContextCompat.getColor(context, R.color.seatTaken)
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         }
 
     }

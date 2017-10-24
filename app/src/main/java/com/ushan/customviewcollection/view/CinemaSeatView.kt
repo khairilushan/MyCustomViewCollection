@@ -45,7 +45,6 @@ class CinemaSeatView : View {
     private var mGestureDetector: GestureDetectorCompat
     private var mScrollAnimator = ValueAnimator.ofFloat(0f, 0f)
     private var mScroller = Scroller(context)
-    private var mSeats = listOf<Seat>()
     private var mComponents = listOf<CinemaComponent>()
     private var mListener: Listener? = null
 
@@ -204,12 +203,18 @@ class CinemaSeatView : View {
     }
 
     private fun onSeatClicked(row: Int, column: Int) {
-        mSeats.map {
-            if (it.row == row && it.column == column) {
+        mComponents.map {
+            if (it is Seat && it.row == row && it.column == column) {
                 it.state = when {
                     it.state == Seat.SEAT_STATE_SELECTED -> Seat.SEAT_STATE_AVAILABLE
                     it.state == Seat.SEAT_STATE_AVAILABLE -> Seat.SEAT_STATE_SELECTED
                     else -> Seat.SEAT_STATE_UNAVAILABLE
+                }
+                when (it.state) {
+                    Seat.SEAT_STATE_SELECTED ->
+                        mListener?.onSeatSelected(it.row, it.column, it.data)
+                    Seat.SEAT_STATE_AVAILABLE ->
+                        mListener?.onSeatUnSelected(it.row, it.column, it.data)
                 }
             }
             return@map it
@@ -350,6 +355,10 @@ class CinemaSeatView : View {
         fun numberOfColumnFor(row: Int): Int
 
         fun componentFor(row: Int, column: Int): CinemaComponent?
+
+        fun onSeatSelected(row: Int, column: Int, data: Any)
+
+        fun onSeatUnSelected(row: Int, column: Int, data: Any)
 
     }
 

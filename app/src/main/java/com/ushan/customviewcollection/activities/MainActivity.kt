@@ -2,6 +2,7 @@ package com.ushan.customviewcollection.activities
 
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
+import android.util.Log
 import com.ushan.customviewcollection.R
 import com.ushan.customviewcollection.view.CinemaSeatLayout
 import com.ushan.customviewcollection.view.CinemaSeatLayout.*
@@ -12,10 +13,27 @@ import kotlinx.android.synthetic.main.activity_select_seat.*
  */
 class MainActivity: AppCompatActivity() {
 
+    companion object {
+        const val TAG = "MainActivity"
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_select_seat)
+
         cinemaSeatLayout.setAdapter(CinemaSeatAdapter())
+
+        cinemaSeatLayout.setOnSeatSelectedListener(object : OnSeatSelectedListener {
+
+            override fun onSelected(row: Int, column: Int, data: Any) {
+                Log.i(TAG, "Selected > $row - $column - $data")
+            }
+
+            override fun onUnSelected(row: Int, column: Int, data: Any) {
+                Log.i(TAG, "UnSelected > $row - $column - $data")
+            }
+
+        })
     }
 
     class CinemaSeatAdapter: CinemaSeatLayout.Adapter() {
