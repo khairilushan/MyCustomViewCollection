@@ -14,7 +14,20 @@ class MainActivity: AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_select_seat)
+
         cinemaSeatLayout.setAdapter(CinemaSeatAdapter())
+        
+        cinemaSeatLayout.setOnSeatSelectedListener(object : OnSeatSelectedListener {
+
+            override fun onSelected(row: Int, column: Int, data: Any) {
+                Log.i(TAG, "Selected > $row - $column - $data")
+            }
+
+            override fun onUnSelected(row: Int, column: Int, data: Any) {
+                Log.i(TAG, "UnSelected > $row - $column - $data")
+            }
+
+        })
     }
 
     class CinemaSeatAdapter: CinemaSeatLayout.Adapter() {
