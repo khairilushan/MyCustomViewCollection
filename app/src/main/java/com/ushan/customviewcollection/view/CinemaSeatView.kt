@@ -15,6 +15,9 @@ import android.view.ScaleGestureDetector
 import android.view.View
 import android.widget.Scroller
 import com.ushan.customviewcollection.R
+import com.ushan.customviewcollection.view.CinemaSeatLayout.CinemaComponent
+import com.ushan.customviewcollection.view.CinemaSeatLayout.Seat
+import com.ushan.customviewcollection.view.CinemaSeatLayout.Text
 
 
 /**
@@ -27,10 +30,10 @@ class CinemaSeatView : View {
     private val mTakenSeatPaint = Paint()
     private val mSelectedSeatPaint = Paint()
     private val mSeatNumberPaint = Paint()
+    private val mSeatTypePaint = Paint()
 
     private var mSeatSpacing = 16f
-    private var mSeatColumnCount = 0
-    private var mSeatRowCount = 0
+    private var mMaxColumnCount = 0
     private var mSeatWidth = 0f
     private var mScale = 1f
     private var mPivot = PointF(0f, 0f)
@@ -43,7 +46,8 @@ class CinemaSeatView : View {
     private var mScrollAnimator = ValueAnimator.ofFloat(0f, 0f)
     private var mScroller = Scroller(context)
     private var mSeats = listOf<Seat>()
-    private var mListener: SeatViewListener? = null
+    private var mComponents = listOf<CinemaComponent>()
+    private var mListener: Listener? = null
 
     companion object {
         private const val MIN_ZOOM = 1f
@@ -95,8 +99,15 @@ class CinemaSeatView : View {
 
         mSeatNumberPaint.apply {
             style = Paint.Style.FILL
-            textSize = 15f
-            color = ContextCompat.getColor(context, R.color.seatAvailableStroke)
+            textSize = 20f
+            color = ContextCompat.getColor(context, R.color.seatTaken)
+        }
+
+        mSeatTypePaint.apply {
+            style = Paint.Style.FILL
+            textSize = 25f
+            color = ContextCompat.getColor(context, R.color.seatTaken)
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         }
     }
 
@@ -106,7 +117,7 @@ class CinemaSeatView : View {
         val clipRestoreCount = canvas.save()
 
         canvas.scale(mScale, mScale, mPivot.x, mPivot.y)
-        drawSeats(canvas)
+        drawComponents(canvas)
         canvas.getClipBounds(mCurrentClipBounds)
 
         canvas.restoreToCount(clipRestoreCount)
@@ -119,49 +130,65 @@ class CinemaSeatView : View {
         return retVal || super.onTouchEvent(event)
     }
 
-    private fun drawSeats(canvas: Canvas) {
+    private fun drawSeat(seat: Seat, canvas: Canvas, top: Float, left: Float, bottom: Float,
+                         right: Float) {
+        val radius = mSeatWidth * 0.35f
+        val bottomRectTop = top + (mSeatWidth * 0.5f)
+        val outerRect = RectF(left, top, right, bottom)
+        val innerRect = RectF(left, bottomRectTop, right, bottom)
+        Log.d("Rect", "$innerRect")
+        when {
+            seat.state == Seat.SEAT_STATE_SELECTED -> {
+                canvas.drawRoundRect(outerRect, radius, radius, mSelectedSeatPaint)
+                canvas.drawRect(innerRect, mSelectedSeatPaint)
+            }
+            seat.state == Seat.SEAT_STATE_UNAVAILABLE -> {
+                canvas.drawRoundRect(outerRect, radius, radius, mTakenSeatPaint)
+                canvas.drawRect(innerRect, mTakenSeatPaint)
+            }
+            else -> {
+                val whiteRect = RectF(left + 1.5f, bottomRectTop - 1.5f,
+                        right - 1.5f, bottom - 1.5f)
+                val columnText = (seat.column + 1).toString()
+                val textFactor = if (columnText.length == 2) 0.1f else 0.3f
+                val textX = whiteRect.left + (mSeatWidth * textFactor)
+                val textY = whiteRect.top + (mSeatWidth * 0.3f)
+                canvas.drawRoundRect(outerRect, radius, radius, mAvailableSeatBorderPaint)
+                canvas.drawRect(innerRect, mAvailableSeatBorderPaint)
+                canvas.drawRect(whiteRect, mAvailableSeatFillPaint)
+                canvas.drawText(columnText, textX, textY, mSeatNumberPaint)
+            }
+        }
+    }
+
+    private fun drawSeatTypeText(text: String, canvas: Canvas, top: Float) {
+        val x = (width - mSeatTypePaint.measureText(text)) / 2
+        val y = top + (mSeatWidth - (mSeatTypePaint.descent() + mSeatTypePaint.ascent())) / 2
+        canvas.drawText(text, x, y, mSeatTypePaint)
+    }
+
+    private fun drawComponents(canvas: Canvas) {
         var top = 0f
         var currentRow = 0
-        var leading = 0f
-        mSeats.forEach {
+        var left = 0f
+        mComponents.forEach {
             if (it.row != currentRow) {
                 currentRow = it.row
-                leading = 0f
+                left = 0f
                 top += (mSeatWidth + mSeatSpacing)
             }
             if (it.column == 0) {
-                leading = mSeatSpacing
+                left = mSeatSpacing
             } else {
-                leading += (mSeatWidth + mSeatSpacing)
+                left += (mSeatWidth + mSeatSpacing)
             }
-            val right = leading + mSeatWidth
+            val right = left + mSeatWidth
             val bottom = top + mSeatWidth
-            val radius = mSeatWidth * 0.35f
-            val bottomRectTop = top + (mSeatWidth * 0.5f)
-            val outerRect = RectF(leading, top, right, bottom)
-            val innerRect = RectF(leading, bottomRectTop, right, bottom)
 
-            when {
-                it.state == Seat.SEAT_STATE_SELECTED -> {
-                    canvas.drawRoundRect(outerRect, radius, radius, mSelectedSeatPaint)
-                    canvas.drawRect(innerRect, mSelectedSeatPaint)
-                }
-                it.state == Seat.SEAT_STATE_UNAVAILABLE -> {
-                    canvas.drawRoundRect(outerRect, radius, radius, mTakenSeatPaint)
-                    canvas.drawRect(innerRect, mTakenSeatPaint)
-                }
-                else -> {
-                    val whiteRect = RectF(leading + 1.5f, bottomRectTop - 1.5f,
-                            right - 1.5f, bottom - 1.5f)
-                    val columnText = (it.column + 1).toString()
-                    val textFactor = if (columnText.length == 2) 0.1f else 0.3f
-                    val textX = whiteRect.left + (mSeatWidth * textFactor)
-                    val textY = whiteRect.top + (mSeatWidth * 0.3f)
-                    canvas.drawRoundRect(outerRect, radius, radius, mAvailableSeatBorderPaint)
-                    canvas.drawRect(innerRect, mAvailableSeatBorderPaint)
-                    canvas.drawRect(whiteRect, mAvailableSeatFillPaint)
-                    canvas.drawText(columnText, textX, textY, mSeatNumberPaint)
-                }
+            if (it is Seat) {
+                drawSeat(it, canvas, top, left, bottom, right)
+            } else if (it is Text && it.column == 0) {
+                drawSeatTypeText(it.text, canvas, top)
             }
         }
     }
@@ -169,9 +196,9 @@ class CinemaSeatView : View {
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
         mOriginalRect = Rect(0, 0, w, h)
-        val columnCount = mSeatColumnCount.toFloat()
-        val totalSpacing = mSeatSpacing * (columnCount + 1)
-        mSeatWidth = (w - totalSpacing) / columnCount
+        val columnCount = mMaxColumnCount.toFloat()
+        val totalSpacing = mSeatSpacing * columnCount
+        mSeatWidth = (width - totalSpacing) / columnCount
         mListener?.onSeatWidthChanged(mSeatWidth)
         ViewCompat.postInvalidateOnAnimation(this@CinemaSeatView)
     }
@@ -201,7 +228,6 @@ class CinemaSeatView : View {
                 mOriginalRect.bottom * mScale
         )
         mListener?.onSeatWidthChanged(mSeatWidth * mScale)
-        log("mScale = $mScale")
     }
 
     private val mScaleGestureListener = object :
@@ -237,16 +263,6 @@ class CinemaSeatView : View {
 
         override fun onScroll(e1: MotionEvent?, e2: MotionEvent?, distanceX: Float,
                               distanceY: Float): Boolean {
-            log("\n" +
-                    "e1 = ${e1?.x ?: 0}, ${e1?.y ?: 0} \n " +
-                    "e2 = ${e2?.x ?: 0}, ${e2?.y ?: 0} \n " +
-                    "distanceX = $distanceX - distanceY = $distanceY \n " +
-                    "mCurrentClipBounds = $mCurrentClipBounds \n " +
-                    "mOriginalRect = ${mOriginalRect.right} \n " +
-                    "mCurrentRect = ${mCurrentRect.right} \n " +
-                    "e2 - e1 = ${e2!!.x - e1!!.x} \n" +
-                    "mPivot = $mPivot \n"
-            )
             var newX = mPivot.x + distanceX
             var newY = mPivot.y + distanceY
             newX = when {
@@ -295,63 +311,45 @@ class CinemaSeatView : View {
             onSeatClicked(row, column)
             ViewCompat.postInvalidateOnAnimation(this@CinemaSeatView)
 
-            log("\n" +
-                    "e = ${e?.x ?: 0}, ${e?.y ?: 0} \n" +
-                    "tapped = $tappedX, $tappedY \n" +
-                    "mCurrentClipBounds = $mCurrentClipBounds \n" +
-                    "scaledCurrentBounds = $scaledCurrentBounds \n" +
-                    "mCurrentRect = ${mCurrentRect.right} \n" +
-                    "currentSeatWidth = $currentSeatWidth \n" +
-                    "currentSeatSpacing = ${mSeatSpacing * mScale} \n" +
-                    "row = $row\n" +
-                    "column = $column\n"
-            )
-
             mListener?.onScrolled(scaledCurrentBounds.left, scaledCurrentBounds.top)
 
             return true
         }
     }
 
-    private fun log(message: String) {
-        Log.d(this::class.java.simpleName, message)
-    }
-
-    fun setSeats(seats: List<Seat>) {
-        var maxRowCount = 0
-        var maxColumnCount = 0
-        var rowColumnCount = 0
-        var currentRow = 0
-        var currentColumn = 0
-        seats.forEach {
-            if (currentRow != it.row) {
-                currentRow = it.row
-                maxRowCount += 1
-                rowColumnCount = 0
-            }
-            if (currentColumn != it.column) {
-                currentColumn = it.column
-                rowColumnCount += 1
-            }
-            if (rowColumnCount > maxColumnCount) {
-                maxColumnCount = rowColumnCount
-            }
-        }
-        mSeatRowCount = maxRowCount
-        mSeatColumnCount = maxColumnCount
-        mSeats = seats
-        ViewCompat.postInvalidateOnAnimation(this@CinemaSeatView)
-    }
-
-    fun addSeatViewListener(listener: SeatViewListener) {
+    fun addSeatViewListener(listener: Listener) {
         mListener = listener
     }
 
-    interface SeatViewListener {
+    fun populateData() {
+        val rowCount = mListener?.numberOfRows() ?: 0
+        val components = mutableListOf<CinemaComponent>()
+        for (row in 0..rowCount) {
+            val columnCount = mListener?.numberOfColumnFor(row) ?: 0
+            mMaxColumnCount = maxOf(mMaxColumnCount, columnCount)
+            (0..columnCount)
+                    .map { mListener?.componentFor(row, it) }
+                    .forEach { component ->
+                        component?.let {
+                            components.add(it)
+                        }
+                    }
+        }
+        mComponents = components
+        ViewCompat.postInvalidateOnAnimation(this@CinemaSeatView)
+    }
+
+    interface Listener {
 
         fun onSeatWidthChanged(width: Float)
 
         fun onScrolled(x: Float, y: Float)
+
+        fun numberOfRows(): Int
+
+        fun numberOfColumnFor(row: Int): Int
+
+        fun componentFor(row: Int, column: Int): CinemaComponent?
 
     }
 

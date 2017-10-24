@@ -20,6 +20,7 @@ class CinemaGuideView : View {
     private var mLabelSpacing = 16f
     private var mRowHeight = 0f
     private var mVerticalScroll = 0f
+    private var mListener: Listener? = null
 
     constructor(context: Context) : this(context, null, 0)
 
@@ -54,18 +55,17 @@ class CinemaGuideView : View {
             } else {
                 y += (mRowHeight + mLabelSpacing)
             }
-            val labelY = y + mLabelSpacing
-            Log.d(this@CinemaGuideView::class.java.simpleName, "" +
-                    "y = $y\n" +
-                    "labelY = $labelY\n" +
-                    "mRowHeight = $mRowHeight\n" +
-                    "mLabelSpacing = $mLabelSpacing"
-            )
+            val labelY = y + mLabelSpacing + (mRowHeight * 0.2f)
             canvas.drawText(row, x, labelY, mLabelPaint)
         }
     }
 
-    fun setRowLabels(rows: List<String>) {
+    fun populateData(rowCount: Int) {
+        val rows = mutableListOf<String>()
+        for (row in 0..rowCount) {
+            val text = mListener?.guideTextFor(row) ?: ""
+            rows.add(text)
+        }
         mRows = rows
         ViewCompat.postInvalidateOnAnimation(this)
     }
@@ -86,6 +86,16 @@ class CinemaGuideView : View {
     fun setVerticalScrollPosition(y: Float) {
         mVerticalScroll = -y
         ViewCompat.postInvalidateOnAnimation(this)
+    }
+
+    fun addGuideViewListener(listener: Listener) {
+        mListener = listener
+    }
+
+    interface Listener {
+
+        fun guideTextFor(row: Int): String
+
     }
 
 }
